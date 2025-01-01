@@ -15,7 +15,7 @@ services:
       - mongodb
       - redis
     networks:
-      - auth-network
+      - backend-network
 
   # Gateway Service
   gateway-service:
@@ -28,14 +28,32 @@ services:
     environment:
       - PORT=3000
       - AUTH_SERVICE_URL=http://auth-service:8080
+      - USER_SERVICE_URL=http://user-service:8081
       - AUTH_SERVICE_TIMEOUT=5000
+      - USER_SERVICE_TIMEOUT=5000
       - NODE_ENV=development
       - THROTTLE_TTL=60
       - THROTTLE_LIMIT=10
     depends_on:
       - auth-service
+      - user-service
     networks:
-      - auth-network
+      - backend-network
+
+  # User Service
+  user-service:
+    build:
+      context: ./quser
+      dockerfile: Dockerfile
+    container_name: user-service
+    ports:
+      - "8081:8081"
+    env_file:
+      - ./quser/.env
+    depends_on:
+      - mongodb
+    networks:
+      - backend-network
 
   # MongoDB
   mongodb:
@@ -46,7 +64,7 @@ services:
     volumes:
       - mongodb_data:/data/db
     networks:
-      - auth-network
+      - backend-network
 
   # Redis
   redis:
@@ -57,12 +75,12 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - auth-network
+      - backend-network
 
 volumes:
   mongodb_data:
   redis_data:
 
 networks:
-  auth-network:
+  backend-network:
     driver: bridge
